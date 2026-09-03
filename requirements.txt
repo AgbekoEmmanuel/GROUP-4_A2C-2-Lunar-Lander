@@ -4,3 +4,7 @@ numpy
 matplotlib
 pandas
 scipy
+swig
+pyvirtualdisplay
+imageio
+imageio-ffmpeg
