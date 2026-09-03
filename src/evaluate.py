@@ -22,7 +22,7 @@ class HeuristicBaselineAgent:
             return 1
         return 0
 
-def evaluate_agent(agent, env_id="LunarLander-v2", seeds=[42, 101, 2024], num_episodes=30):
+def evaluate_agent(agent, env_id="LunarLander-v3", seeds=[42, 101, 2024], num_episodes=30):
     all_results = []
     for seed in seeds:
         env = gym.make(env_id)
