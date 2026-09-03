@@ -21,61 +21,61 @@ class ActorCritic(nn.Module):
         return torch.softmax(self.actor(x), dim=-1), self.critic(x)
 
 def train_a2c(episodes=500):
-    env = gym.make("LunarLander-v2")
+    env = gym.make("LunarLander-v3")
     model = ActorCritic()
     optimizer = optim.Adam(model.parameters(), lr=3e-4)
     gamma = 0.99
-    
+
     episode_rewards = []
-    
+
     for ep in range(episodes):
         state, _ = env.reset()
         log_probs = []
         values = []
         rewards = []
         masks = []
-        
+
         done = False
         while not done:
             state_t = torch.FloatTensor(state).unsqueeze(0)
             probs, value = model(state_t)
             m = Categorical(probs)
             action = m.sample()
-            
+
             next_state, reward, terminated, truncated, _ = env.step(action.item())
             done = terminated or truncated
-            
+
             log_probs.append(m.log_prob(action))
             values.append(value)
             rewards.append(reward)
             masks.append(float(not done))
             state = next_state
-            
+
         # Compute returns and advantages
         returns = []
         R = 0
         for r, mask in zip(reversed(rewards), reversed(masks)):
             R = r + gamma * R * mask
             returns.insert(0, R)
-            
+
         returns = torch.FloatTensor(returns)
         values = torch.cat(values)
         advantage = returns - values.detach()
-        
+
         policy_loss = -(torch.stack(log_probs) * advantage).mean()
         value_loss = nn.functional.mse_loss(values, returns)
         loss = policy_loss + 0.5 * value_loss
-        
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+
         total_ep_reward = sum(rewards)
         episode_rewards.append(total_ep_reward)
-        
+
         if (ep + 1) % 50 == 0:
             print(f"Episode {ep + 1}/{episodes} | Average Reward: {np.mean(episode_rewards[-50:]):.2f}")
-            
+
     env.close()
     os.makedirs("logs", exist_ok=True)
     pd.DataFrame({"episode": range(1, episodes + 1), "reward": episode_rewards}).to_csv("logs/a2c_training_results.csv", index=False)
